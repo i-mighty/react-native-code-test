@@ -75,12 +75,14 @@ const BlogCard: FC<Blog> = (props) => {
             />
           </SharedElement>
           <SharedElement id={`blog.${id}.text`}>
-            <Text category='p1' numberOfLines={3} ellipsizeMode='tail' style={styles.content} >
-              {content}
-            </Text>
-            <Text category='label' status='primary'>
-              Continue reading
-            </Text>
+            <View style={{marginTop: -50}}>
+              <Text category='p1' numberOfLines={3} ellipsizeMode='tail' style={styles.content} >
+                {content}
+              </Text>
+              <Text category='label' status='primary'>
+                Continue reading
+              </Text>
+            </View>
           </SharedElement>
         </MotiView>
       }

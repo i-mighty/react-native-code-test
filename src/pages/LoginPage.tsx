@@ -1,5 +1,5 @@
 import React, { FC, useState, useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View, KeyboardAvoidingView } from 'react-native';
 import { Text, Input, Button, InputProps } from "@ui-kitten/components";
 import { Control, FieldErrors, useController, useForm, } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -9,6 +9,8 @@ import { useNavigation } from '@react-navigation/native';
 import { routes } from 'src/types/routes';
 import { useAuth } from '../hooks/auth';
 import {firebaseInstance} from '../../App'
+import Spinner from 'react-native-loading-spinner-overlay';
+
 
 interface LoginForm{
   email: string;
@@ -25,7 +27,8 @@ const LoginPage: FC = () => {
   const navigation = useNavigation();
   const [formErrors, setFormErrors] = useState<Partial<LoginForm>>();
   const [formValues, setFormValues] = useState<LoginForm>();
-  const [authState, setAuthState] = useAuth();
+  const [, setAuthState] = useAuth();
+  const [loading, setLoading] = useState(false)
 
   const {handleSubmit, control} = useForm({
     resolver: yupResolver(formSchema)
@@ -34,14 +37,17 @@ const LoginPage: FC = () => {
   const loginAction = (email: string, password: string) => {
     firebaseInstance.auth().signInWithEmailAndPassword(email, password).then((userCreds) => {
       setAuthState({authState: true, userDetails: userCreds.user})
-    }).catch(() => {
-      
+      setLoading(false);
+      navigation.navigate(routes.HOME)
+    }).catch((e: Error) => {
+      Alert.alert(`Couldn't login`, e.message)
     })
   }
 
   const onValidForm = (data: LoginForm) => {
+    setLoading(true)
     setFormValues(data);
-    navigation.navigate(routes.HOME)
+    loginAction(data.email, data.password);
   }
 
   const onInvalidForm = (errors: FieldErrors<LoginForm>) => {
@@ -53,7 +59,12 @@ const LoginPage: FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior='padding'>
+      <Spinner
+        visible={loading}
+        textContent={'Loading...'}
+        textStyle={styles.spinnerTextStyle}
+      />
       <Text style={styles.titleText} category="h2">
         Login
       </Text>
@@ -80,7 +91,7 @@ const LoginPage: FC = () => {
           Login
         </Button>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -104,5 +115,8 @@ const styles = StyleSheet.create({
   },
   input: {
     marginVertical: 10
-  }
+  },
+  spinnerTextStyle: {
+    color: '#FFF'
+  },
 });

@@ -1,8 +1,8 @@
-import React, { FC, useState, useEffect } from 'react'
+import React, { FC, useState, useLayoutEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native';
 import moment from 'moment';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Layout, TopNavigation, Text, Icon, IconProps } from "@ui-kitten/components"
+import { Layout, TopNavigation, Text, Icon, TopNavigationAction } from "@ui-kitten/components"
 import SpinnerImage from 'src/components/SpinnerImage';
 import { Blog } from '../types/blog';
 import ProgressText from '../components/ProgressText';
@@ -19,28 +19,31 @@ const BlogPage: FC = () => {
   const [blogProgress, setBlogProgress] = useState(progress || 0)
   const shouldNotify = blogProgress < 0.7;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     return () => {
       navigation.addListener('beforeRemove', (e) => {
-        if (!shouldNotify) {
-          return
+        if (shouldNotify) {
+          e.preventDefault();
+          console.log(`progress: ${blogProgress}`);
+          
+          scheduleNotification({
+            title: 'Continue Reading',
+            body: `Continue reading ${title}`,
+            data: {
+              blog: params.blog,
+              progress: blogProgress
+            }
+          }, 10800).then(() => {
+            navigation.dispatch(e.data.action);
+          })
         }
-        e.preventDefault();
-        console.log(`progress: ${blogProgress}`);
-        
-        scheduleNotification({
-          title: 'Continue Reading',
-          body: `Continue reading ${title}`,
-          data: {
-            blog: params.blog,
-            progress: blogProgress
-          }
-        }).then(() => {
-          navigation.dispatch(e.data.action);
-        })
       })
     }
   }, [navigation, shouldNotify])
+
+  const goBack = () => {
+    navigation.goBack();
+  }
 
   const InfoItem = ({iconName, text}: {iconName: string, text: string}) => (
     <Layout level='2' style={styles.infoItem}>
@@ -48,12 +51,17 @@ const BlogPage: FC = () => {
       <Text status='info' style={styles.infoText} category='h6'>{text}</Text>
     </Layout>
   )
+
+  const BackIcon = (props: any) => (
+    <Icon {...props} name='arrow-back'/>
+  );
   
   return (
     <Layout level='2' style={{flex: 1}}>
         <SharedElement id={`blog.${id}.header`}>
           <TopNavigation
             alignment='center'
+            accessoryLeft={() => <TopNavigationAction icon={BackIcon} onPress={goBack}/> }
             title={evaProps => <Text {...evaProps} style={styles.headerText} >{title}</Text>}
             subtitle={evaProps => <Text {...evaProps} style={styles.headerText} category="s2" appearance="hint">{`By ${author}`}</Text>}
           />
